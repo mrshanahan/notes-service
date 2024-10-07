@@ -1,0 +1,38 @@
+# Variables:
+# - KC_PORT (default: 8080): Port to expose for Keycloak
+
+services:
+  db:
+    image: notes-api/auth-db
+    build:
+      context: auth-db
+    restart: always
+    shm_size: 128mb
+    volumes:
+      - kc-data:/var/lib/postgresql/data:rw
+      - secrets:/etc/secrets:r
+    hostname: kc-db
+
+  auth:
+    image: notes-api/auth
+    build:
+      context: auth
+    volumes:
+      - secrets:/etc/secrets:r
+    depends_on:
+      - db
+    command: start --optimized
+    ports:
+      - ${KC_PORT:-8080}:80
+    environment:
+      KC_DB_URL: "jdbc:postgresql://kc-db:5432/"
+      KC_HTTP_ENABLED: true
+      KC_HTTP_PORT: 80
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: false
+
+volumes:
+  kc-data:
+    external: true
+  secrets:
+    external: true
