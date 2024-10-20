@@ -14,8 +14,10 @@ validate() {
     fi
 }
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 echo "[build.sh] building service images" >&2
-docker compose -f ./docker-compose.yml build --no-cache
+docker compose -f "$SCRIPT_DIR/../docker-compose.yml" build --no-cache
 validate "failed to build service images"
 
 echo "[build.sh] building initialization image" >&2
@@ -41,8 +43,8 @@ mkdir ./package
 cp -r ./notes-api_auth.tar.gz ./notes-api_auth-db.tar.gz ./notes-api_auth-init.tar.gz ./docker-compose.yml ./package
 validate "failed to copy container files to package"
 
-cp -r ./package-scripts ./package/scripts
-validate "failed to copy script files to package"
+cp -r ./package-files/* ./package
+validate "failed to copy static files to package"
 
 PACKAGE="./package_$(date +%Y%m%d%H%M%S).tar.gz"
 echo "[build.sh] compressing package -> $PACKAGE" >&2

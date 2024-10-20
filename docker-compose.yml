@@ -10,7 +10,12 @@ services:
     shm_size: 128mb
     volumes:
       - kc-data:/var/lib/postgresql/data:rw
-      - secrets:/etc/secrets:r
+      - type: volume
+        source: notes-secrets
+        target: /secrets
+        read_only: true
+        volume:
+          subpath: auth
     hostname: kc-db
 
   auth:
@@ -18,7 +23,12 @@ services:
     build:
       context: auth
     volumes:
-      - secrets:/etc/secrets:r
+      - type: volume
+        source: notes-secrets
+        target: /secrets
+        read_only: true
+        volume:
+          subpath: auth
     depends_on:
       - db
     command: start --optimized
@@ -34,5 +44,5 @@ services:
 volumes:
   kc-data:
     external: true
-  secrets:
+  notes-secrets:
     external: true

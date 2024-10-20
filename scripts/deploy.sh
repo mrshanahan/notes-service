@@ -53,27 +53,6 @@ validate() {
     fi
 }
 
-# EXISTING_AUTH_ID=\$(sudo docker image ls --format '{{ .Repository }},{{ .ID }}' | grep ^notes-api/auth, | cut -d, -f2)
-# validate "failed to check for existing docker auth image"
-# if [[ "\$EXISTING_AUTH_ID" != "" ]]; then
-#     sudo docker image rm "\$EXISTING_AUTH_ID"
-#     validate "failed to remove existing docker auth image"
-# fi
-
-# EXISTING_AUTHDB_ID=\$(sudo docker image ls --format '{{ .Repository }},{{ .ID }}' | grep ^notes-api/auth-db, | cut -d, -f2)
-# validate "failed to check for existing docker auth-db image"
-# if [[ "\$EXISTING_AUTHDB_ID" != "" ]]; then
-#     sudo docker image rm "\$EXISTING_AUTHDB_ID"
-#     validate "failed to remove existing docker auth-db image"
-# fi
-
-# EXISTING_AUTHINIT_ID=\$(sudo docker image ls --format '{{ .Repository }},{{ .ID }}' | grep ^notes-api/auth-init, | cut -d, -f2)
-# validate "failed to check for existing docker auth-init image"
-# if [[ "\$EXISTING_AUTHINIT_ID" != "" ]]; then
-#     sudo docker image rm "\$EXISTING_AUTHINIT_ID"
-#     validate "failed to remove existing docker auth-init image"
-# fi
-
 sudo docker image prune --force
 validate "failed to prune old images"
 
