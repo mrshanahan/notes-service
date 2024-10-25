@@ -19,3 +19,11 @@ There are no secrets at build time. Instead, running `build.sh` will build a pac
     - Then it can be spun up:
 
         KC_DB_PASSWORD=<db-password> KC_ADMIN_PASSWORD=<kc-password> docker compose -f ./docker-compose.yml up -d
+
+# TODO:
+
+- Enable notes realm
+- Enable user registration on "Login screen customization"
+- Try to make full name not required, plus just make email == username
+- Create notes-api client
+    o Just device auth

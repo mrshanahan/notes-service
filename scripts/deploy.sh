@@ -60,15 +60,11 @@ cd /home/ubuntu
 tar xvf "$PACKAGE_NAME" && (rm "$PACKAGE_NAME")
 validate "failed to extract & remove package $PACKAGE_NAME"
 
-cat ./package/notes-api_auth.tar.gz | sudo docker load
-validate "failed to load notes-api/auth image"
-rm ./package/notes-api_auth.tar.gz
-
-cat ./package/notes-api_auth-db.tar.gz | sudo docker load
-validate "failed to load notes-api/auth-db image"
-rm ./package/notes-api_auth-db.tar.gz
-
-cat ./package/notes-api_auth-init.tar.gz | sudo docker load
-validate "failed to load notes-api/auth-init image"
-rm ./package/notes-api_auth-init.tar.gz
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-init' 'notes-api/api')
+for I in \${IMAGES[@]}; do
+    FILENAME="\$(echo \$I | tr '/' '_').tar.gz"
+    cat "./package/\$FILENAME" | sudo docker load
+    validate "failed to load notes-api/\$I image"
+    rm "./package/\$FILENAME"
+done
 EOF

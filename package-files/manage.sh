@@ -10,21 +10,26 @@ usage: $(basename "${BASH_SOURCE[0]}") <global-options> <command> <sub-options>
     Manages a local Notes API service.
 
     Global options:
-        -h|--help               Show usage information & exit.
-        -p|--port               Port at which the auth service should be/is hosted. Defaults to 8080.
+        -h|--help                   Show usage information & exit.
+        --auth-port                 Port at which the auth service should be/is hosted. Defaults to 8080.
+        --auth-url                  URL at which the auth service is hosted. Defaults to https://auth.notes.quemot.dev.
+        --api-port                  Port at which the api service should be/is hosted. Defaults to 3333.
 
     Commands:
-        setup-auth-service      Performs any necessary setup for the auth service. Fully idempotent.
+        start                       Runs the following steps to fully start the service:
+                                        setup-auth-service
+                                        docker-compose auth up -d
+                                        setup-api-service
+                                        docker-compose api up -d
+        stop                        Runs the following steps to fully stop the service:
+                                        docker-compose api down
+                                        docker-compose auth down
+        setup-auth-service          Performs any necessary setup for the auth service. Fully idempotent.
+        check-auth-secrets          Validates that all required secrets used by the auth service are present.
+        reset-auth-secrets          Fully resets all secrets used by the auth service.
+        setup-api-service           Sets up the API client on the running auth service.
+        docker-compose,dc <svc>     Passes through the remaining arguments to docker-compose using the given service as the context.
 
-        check-auth-secrets      Validates that all required secrets used by the auth service are present.
-
-        reset-auth-secrets      Fully resets all secrets used by the auth service.
-
-        setup-api-client        Sets up the API client on the running auth service.
-            Options:
-                -u|--auth-url       URL at which the auth service is hosted. Defaults to https://auth.notes.quemot.dev.
-        
-        docker-compose,dc       Passes through the remaining arguments to docker-compose using the auth service as the context.
 EOF
     exit 0
 }
@@ -33,52 +38,143 @@ if [[ -z "$1" ]]; then
     usage
 fi
 
+setup-auth-service() {
+    "$SCRIPT_DIR/setup-auth-secrets.sh"
+    "$SCRIPT_DIR/ensure-volume.sh" kc-data
+}
+
+check-auth-secrets() {
+    "$SCRIPT_DIR/check-auth-secrets.sh"
+}
+
+reset-auth-secrets() {
+    "$SCRIPT_DIR/setup-auth-secrets.sh" --force
+}
+
+setup-api-service() {
+    "$SCRIPT_DIR/setup-api-client.sh" "$AUTH_URL"
+    "$SCRIPT_DIR/ensure-volume.sh" notes-data
+}
+
+wait-for-ok() {
+    URL="$1"
+    MAX_ATTEMPTS=5
+    ATTEMPT=1
+    echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
+    curl -fs "$URL" >/dev/null
+    RESULT=$?
+    while [[ $RESULT -ne 0 && $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+        sleep 10
+        ATTEMPT=$(( $ATTEMPT + 1 ))
+        echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
+        curl -fs "$URL" >/dev/null
+        RESULT=$?
+    done
+    if [[ $RESULT -ne 0 ]]; then
+        echo "error: could not get valid HTTP status code from auth url after $MAX_ATTEMPTS" >&2
+        exit -1
+    fi
+}
+
+invoke-docker-compose() {
+    if [[ -z "$1" ]]; then
+        echo "error: expected service argument for command $1" >&2
+        exit -1
+    fi
+
+    # https://stackoverflow.com/questions/15691942/print-array-elements-on-separate-lines-in-bash
+    SVC=""
+    for S in ${SERVICES[@]}; do
+        if [[ "$S" == "$1" ]]; then
+            SVC="$S"
+        fi
+    done
+    if [[ -z $SVC ]]; then
+        echo "error: unrecognized service name: $1" >&2
+        exit -1
+    fi
+
+    shift
+
+    KC_URL=$AUTH_URL KC_PORT=$AUTH_PORT NOTES_API_PORT=$API_PORT \
+        docker compose -f "$SCRIPT_DIR/docker-compose-${SVC}.yml" $*
+
+}
+
 DEFAULT_AUTH_URL="https://auth.notes.quemot.dev"
 DEFAULT_AUTH_PORT=8080
+DEFAULT_API_PORT=3333
+SERVICES=('auth' 'api')
 
+AUTH_URL=$DEFAULT_AUTH_URL
 AUTH_PORT=$DEFAULT_AUTH_PORT
+API_PORT=$DEFAULT_API_PORT
 case "$1" in
     -h|--help)
         usage
         ;;
-    -p|--port)
+    --auth-port)
         if [[ ! -z "$2" ]]; then
             if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
                 AUTH_PORT="$2"
             else
-                echo "error: invalid value for port (expecting positive integer): $2" >&2
+                echo "error: invalid value for auth port (expecting positive integer): $2" >&2
                 exit -1
             fi
+        else
+            echo "error: expected value for auth port" >&2
+            exit -1
         fi
+        ;;
+    --auth-url)
+        if [[ ! -z "$2" ]]; then
+            AUTH_URL="$2"
+        else
+            echo "error: expected value for auth URL" >&2
+            exit -1
+        fi
+        ;;
+    --api-port)
+        if [[ ! -z "$2" ]]; then
+            if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
+                API_PORT="$2"
+            else
+                echo "error: invalid value for api port (expecting positive integer): $2" >&2
+                exit -1
+            fi
+        else
+            echo "error: expected value for api port" >&2
+            exit -1
+        fi
+        ;;
+    start)
+        setup-auth-service
+        invoke-docker-compose auth up -d
+        validate_command "failed to spin up auth service"
+        wait-for-ok "$AUTH_URL"
+        setup-api-service
+        AUTH_URL="$AUTH_URL" API_PORT="$API_PORT" invoke-docker-compose api up -d
+        validate_command "failed to spin up api service"
+        ;;
+    stop)
+        invoke-docker-compose api down
+        invoke-docker-compose auth down
         ;;
     setup-auth-service)
-        "$SCRIPT_DIR/setup-auth-secrets.sh"
-        "$SCRIPT_DIR/ensure-volume.sh" kc-data
+        setup-auth-service
         ;;
     check-auth-secrets)
-        "$SCRIPT_DIR/check-auth-secrets.sh"
+        check-auth-secrets
         ;;
     reset-auth-secrets)
-        "$SCRIPT_DIR/setup-auth-secrets.sh" --force
+        reset-auth-secrets
         ;;
-    setup-api-client)
-        URL=$DEFAULT_AUTH_URL
-        if [[ ! -z "$2" ]]; then
-            case "$2" in
-                -u|--auth-url)
-                    URL="$3"
-                    ;;
-                *)
-                    echo "error: unrecognized argument '$2'" >&2
-                    exit -1
-                    ;;
-            esac
-        fi
-        "$SCRIPT_DIR/setup-api-client.sh" "$URL"            
+    setup-api-service)
+        setup-api-service
         ;;
     docker-compose|dc)
         shift
-        KC_PORT=$AUTH_PORT docker compose -f "$SCRIPT_DIR/docker-compose.yml" $*
+        invoke-docker-compose $*
         ;;
     -*)
         echo "error: unrecognized option: $1" >&2

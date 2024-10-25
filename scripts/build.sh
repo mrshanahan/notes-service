@@ -16,31 +16,31 @@ validate() {
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-echo "[build.sh] building service images" >&2
-docker compose -f "$SCRIPT_DIR/../docker-compose.yml" build --no-cache
-validate "failed to build service images"
+echo "[build.sh] building auth service images" >&2
+docker compose -f "$SCRIPT_DIR/../docker-compose-auth.yml" build --no-cache
+validate "failed to build auth service images"
+
+echo "[build.sh] building api service images" >&2
+docker compose -f "$SCRIPT_DIR/../docker-compose-api.yml" build --no-cache
+validate "failed to build api service images"
 
 echo "[build.sh] building initialization image" >&2
 docker build auth-init -t notes-api/auth-init --no-cache
 validate "failed to build auth-init image"
 
-echo "[build.sh] saving notes-api/auth image" >&2
-docker save notes-api/auth -o ./notes-api_auth.tar.gz
-validate "failed to save notes-api/auth image"
-
-echo "[build.sh] saving notes-api/auth-db image" >&2
-docker save notes-api/auth-db -o ./notes-api_auth-db.tar.gz
-validate "failed to save notes-api/auth-db image"
-
-echo "[build.sh] saving notes-api/auth-init image" >&2
-docker save notes-api/auth-init -o ./notes-api_auth-init.tar.gz
-validate "failed to save notes-api/auth-init image"
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-init' 'notes-api/api')
+for I in ${IMAGES[@]}; do
+    FILENAME="$(echo $I | tr '/' '_').tar.gz"
+    echo "[build.sh] saving $I image" >&2
+    docker save "$I" -o "./$FILENAME"
+    validate "failed to save $I image"
+done
 
 if [ -d "./package" ]; then
     rm -rf ./package
 fi
 mkdir ./package
-cp -r ./notes-api_auth.tar.gz ./notes-api_auth-db.tar.gz ./notes-api_auth-init.tar.gz ./docker-compose.yml ./package
+cp -r ./notes-api_*.tar.gz ./docker-compose*.yml ./package
 validate "failed to copy container files to package"
 
 cp -r ./package-files/* ./package
@@ -52,5 +52,4 @@ tar czvf "$PACKAGE" ./package
 validate "failed to create package tarball"
 
 echo "[build.sh] cleaning up package directory" >&2
-#rm -rf ./package ./notes-api_auth.tar.gz ./notes-api_auth-db.tar.gz ./notes-api_auth-init.tar.gz
-rm -rf ./package ./notes-api_auth.tar.gz ./notes-api_auth-db.tar.gz ./notes-api_auth-init.tar.gz
+rm -rf ./package ./notes-api_*.tar.gz
