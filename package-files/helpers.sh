@@ -55,3 +55,23 @@ ensure_secrets_volume() {
     ensure_volume "notes-secrets"
     echo "notes-secrets"
 }
+
+wait-for-ok() {
+    URL="$1"
+    MAX_ATTEMPTS=10
+    ATTEMPT=1
+    echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
+    curl -fs "$URL" >/dev/null
+    RESULT=$?
+    while [[ $RESULT -ne 0 && $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+        sleep 10
+        ATTEMPT=$(( $ATTEMPT + 1 ))
+        echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
+        curl -fs "$URL" >/dev/null
+        RESULT=$?
+    done
+    if [[ $RESULT -ne 0 ]]; then
+        echo "error: could not get valid HTTP status code from auth url after $MAX_ATTEMPTS" >&2
+        exit -1
+    fi
+}

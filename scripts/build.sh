@@ -24,11 +24,11 @@ echo "[build.sh] building api service images" >&2
 docker compose -f "$SCRIPT_DIR/../docker-compose-api.yml" build --no-cache
 validate "failed to build api service images"
 
-echo "[build.sh] building initialization image" >&2
-docker build auth-init -t notes-api/auth-init --no-cache
-validate "failed to build auth-init image"
+echo "[build.sh] building auth CLI image" >&2
+docker build auth-cli -t notes-api/auth-cli --no-cache
+validate "failed to build auth-cli image"
 
-IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-init' 'notes-api/api')
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api')
 for I in ${IMAGES[@]}; do
     FILENAME="$(echo $I | tr '/' '_').tar.gz"
     echo "[build.sh] saving $I image" >&2

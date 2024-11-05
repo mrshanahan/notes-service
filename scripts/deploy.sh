@@ -27,7 +27,7 @@ EOF
 
 ATTEMPTS=0
 SUCCESS=1
-while [[ $ATTEMPTS -lt 10 && $SUCCESS -ne 0 ]]; do
+while [[ $ATTEMPTS -lt 20 && $SUCCESS -ne 0 ]]; do
     echo "[deploy] attempting transfer ($(($ATTEMPTS+1)))"
     rsync -P -e "ssh -i ~/.ssh/quemot-dev.pem" "$PACKAGE" ubuntu@quemot.dev:/home/ubuntu
     SUCCESS=$?
@@ -60,7 +60,7 @@ cd /home/ubuntu
 tar xvf "$PACKAGE_NAME" && (rm "$PACKAGE_NAME")
 validate "failed to extract & remove package $PACKAGE_NAME"
 
-IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-init' 'notes-api/api')
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api')
 for I in \${IMAGES[@]}; do
     FILENAME="\$(echo \$I | tr '/' '_').tar.gz"
     cat "./package/\$FILENAME" | sudo docker load

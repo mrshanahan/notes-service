@@ -24,6 +24,7 @@ usage: $(basename "${BASH_SOURCE[0]}") <global-options> <command> <sub-options>
         stop                        Runs the following steps to fully stop the service:
                                         docker-compose api down
                                         docker-compose auth down
+        auth-cli                    Enter a CLI for interacting with the auth service as admin.
         setup-auth-service          Performs any necessary setup for the auth service. Fully idempotent.
         check-auth-secrets          Validates that all required secrets used by the auth service are present.
         reset-auth-secrets          Fully resets all secrets used by the auth service.
@@ -37,6 +38,10 @@ EOF
 if [[ -z "$1" ]]; then
     usage
 fi
+
+auth-cli() {
+    "$SCRIPT_DIR/enter-auth-cli.sh"
+}
 
 setup-auth-service() {
     "$SCRIPT_DIR/setup-auth-secrets.sh"
@@ -53,27 +58,8 @@ reset-auth-secrets() {
 
 setup-api-service() {
     "$SCRIPT_DIR/setup-api-client.sh" "$AUTH_URL"
+    validate_command "failed to setup API client"
     "$SCRIPT_DIR/ensure-volume.sh" notes-data
-}
-
-wait-for-ok() {
-    URL="$1"
-    MAX_ATTEMPTS=5
-    ATTEMPT=1
-    echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
-    curl -fs "$URL" >/dev/null
-    RESULT=$?
-    while [[ $RESULT -ne 0 && $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
-        sleep 10
-        ATTEMPT=$(( $ATTEMPT + 1 ))
-        echo "($ATTEMPT/$MAX_ATTEMPTS) attempting to check status of $URL" >&2
-        curl -fs "$URL" >/dev/null
-        RESULT=$?
-    done
-    if [[ $RESULT -ne 0 ]]; then
-        echo "error: could not get valid HTTP status code from auth url after $MAX_ATTEMPTS" >&2
-        exit -1
-    fi
 }
 
 invoke-docker-compose() {
@@ -151,7 +137,6 @@ case "$1" in
         setup-auth-service
         invoke-docker-compose auth up -d
         validate_command "failed to spin up auth service"
-        wait-for-ok "$AUTH_URL"
         setup-api-service
         AUTH_URL="$AUTH_URL" API_PORT="$API_PORT" invoke-docker-compose api up -d
         validate_command "failed to spin up api service"
@@ -159,6 +144,9 @@ case "$1" in
     stop)
         invoke-docker-compose api down
         invoke-docker-compose auth down
+        ;;
+    auth-cli)
+        auth-cli
         ;;
     setup-auth-service)
         setup-auth-service
