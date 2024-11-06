@@ -12,7 +12,8 @@ usage: $(basename "${BASH_SOURCE[0]}") <global-options> <command> <sub-options>
     Global options:
         -h|--help                   Show usage information & exit.
         --auth-port                 Port at which the auth service should be/is hosted. Defaults to 8080.
-        --auth-url                  URL at which the auth service is hosted. Defaults to https://auth.notes.quemot.dev.
+        --auth-url                  URL at which the auth service's main application is hosted. Defaults to https://auth.notes.quemot.dev.
+        --auth-admin-url            URL at which the auth service's admin features are accessible. Defaults to https://auth-admin.notes.quemot.dev.
         --api-port                  Port at which the api service should be/is hosted. Defaults to 3333.
 
     Commands:
@@ -40,7 +41,7 @@ if [[ -z "$1" ]]; then
 fi
 
 auth-cli() {
-    "$SCRIPT_DIR/enter-auth-cli.sh"
+    "$SCRIPT_DIR/enter-auth-cli.sh" "$1"
 }
 
 setup-auth-service() {
@@ -88,88 +89,107 @@ invoke-docker-compose() {
 }
 
 DEFAULT_AUTH_URL="https://auth.notes.quemot.dev"
+DEFAULT_AUTH_ADMIN_URL="https://auth-admin.notes.quemot.dev"
 DEFAULT_AUTH_PORT=8080
 DEFAULT_API_PORT=3333
 SERVICES=('auth' 'api')
 
 AUTH_URL=$DEFAULT_AUTH_URL
+AUTH_ADMIN_URL=$DEFAULT_AUTH_ADMIN_URL
 AUTH_PORT=$DEFAULT_AUTH_PORT
 API_PORT=$DEFAULT_API_PORT
-case "$1" in
-    -h|--help)
-        usage
-        ;;
-    --auth-port)
-        if [[ ! -z "$2" ]]; then
-            if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
-                AUTH_PORT="$2"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            ;;
+        --auth-port)
+            if [[ ! -z "$2" ]]; then
+                if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
+                    AUTH_PORT="$2"
+                else
+                    echo "error: invalid value for auth port (expecting positive integer): $2" >&2
+                    exit -1
+                fi
             else
-                echo "error: invalid value for auth port (expecting positive integer): $2" >&2
+                echo "error: expected value for auth port" >&2
                 exit -1
             fi
-        else
-            echo "error: expected value for auth port" >&2
-            exit -1
-        fi
-        ;;
-    --auth-url)
-        if [[ ! -z "$2" ]]; then
-            AUTH_URL="$2"
-        else
-            echo "error: expected value for auth URL" >&2
-            exit -1
-        fi
-        ;;
-    --api-port)
-        if [[ ! -z "$2" ]]; then
-            if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
-                API_PORT="$2"
+            shift
+            shift
+            ;;
+        --auth-url)
+            if [[ ! -z "$2" ]]; then
+                AUTH_URL="$2"
             else
-                echo "error: invalid value for api port (expecting positive integer): $2" >&2
+                echo "error: expected value for auth URL" >&2
                 exit -1
             fi
-        else
-            echo "error: expected value for api port" >&2
+            shift
+            shift
+            ;;
+        --auth-admin-url)
+            if [[ ! -z "$2" ]]; then
+                AUTH_ADMIN_URL="$2"
+            else
+                echo "error: expected value for auth admin URL" >&2
+                exit -1
+            fi
+            shift
+            shift
+            ;;
+        --api-port)
+            if [[ ! -z "$2" ]]; then
+                if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
+                    API_PORT="$2"
+                else
+                    echo "error: invalid value for api port (expecting positive integer): $2" >&2
+                    exit -1
+                fi
+            else
+                echo "error: expected value for api port" >&2
+                exit -1
+            fi
+            shift
+            shift
+            ;;
+        start)
+            setup-auth-service
+            invoke-docker-compose auth up -d
+            validate_command "failed to spin up auth service"
+            setup-api-service
+            AUTH_URL="$AUTH_URL" API_PORT="$API_PORT" invoke-docker-compose api up -d
+            validate_command "failed to spin up api service"
+            ;;
+        stop)
+            invoke-docker-compose api down
+            invoke-docker-compose auth down
+            ;;
+        auth-cli)
+            auth-cli $AUTH_ADMIN_URL
+            ;;
+        setup-auth-service)
+            setup-auth-service
+            ;;
+        check-auth-secrets)
+            check-auth-secrets
+            ;;
+        reset-auth-secrets)
+            reset-auth-secrets
+            ;;
+        setup-api-service)
+            setup-api-service
+            ;;
+        docker-compose|dc)
+            shift
+            invoke-docker-compose $*
+            ;;
+        -*)
+            echo "error: unrecognized option: $1" >&2
             exit -1
-        fi
-        ;;
-    start)
-        setup-auth-service
-        invoke-docker-compose auth up -d
-        validate_command "failed to spin up auth service"
-        setup-api-service
-        AUTH_URL="$AUTH_URL" API_PORT="$API_PORT" invoke-docker-compose api up -d
-        validate_command "failed to spin up api service"
-        ;;
-    stop)
-        invoke-docker-compose api down
-        invoke-docker-compose auth down
-        ;;
-    auth-cli)
-        auth-cli
-        ;;
-    setup-auth-service)
-        setup-auth-service
-        ;;
-    check-auth-secrets)
-        check-auth-secrets
-        ;;
-    reset-auth-secrets)
-        reset-auth-secrets
-        ;;
-    setup-api-service)
-        setup-api-service
-        ;;
-    docker-compose|dc)
-        shift
-        invoke-docker-compose $*
-        ;;
-    -*)
-        echo "error: unrecognized option: $1" >&2
-        exit -1
-        ;;
-    *)
-        echo "error: unrecognized command: $1" >&2
-        exit -1
-esac
-
+            ;;
+        *)
+            echo "error: unrecognized command: $1" >&2
+            exit -1
+    esac
+done

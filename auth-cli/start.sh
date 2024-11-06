@@ -23,7 +23,7 @@ validate() {
 KC_ADMIN_USERNAME=$(load_secret "KC_ADMIN_USERNAME")
 KC_ADMIN_PASSWORD=$(load_secret "KC_ADMIN_PASSWORD")
 if [[ "$KC_URL" == "" ]]; then
-    KC_URL="https://auth.notes.quemot.dev"
+    KC_URL="https://auth-admin.notes.quemot.dev"
     echo "warn: KC_URL not provided, using default '$KC_URL'" >&2
 fi
 

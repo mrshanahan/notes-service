@@ -3,7 +3,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . "$SCRIPT_DIR/helpers.sh"
 
-KC_URL="https://auth.notes.quemot.dev"
+KC_URL="https://auth-admin.notes.quemot.dev"
 if [[ "$1" != "" ]]; then
     KC_URL="$1"
 fi
