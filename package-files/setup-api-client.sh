@@ -4,14 +4,14 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . "$SCRIPT_DIR/helpers.sh"
 
 if [[ "$1" == "" ]]; then
-    echo "error: expected argument for KC_URL, got none" >&2
+    echo "error: expected argument for KC_ADMIN_URL, got none" >&2
     exit -1
 fi
-KC_URL="$1"
+KC_ADMIN_URL="$1"
 
 VOLUME=$(ensure_secrets_volume)
 
-wait-for-ok "$KC_URL"
+wait-for-ok "$KC_ADMIN_URL"
 
 SCRIPT=$(cat <<EOF
 cp -r /auth-cli-scripts/* .
@@ -19,7 +19,7 @@ chmod a+x ./initialize.sh
 ./initialize.sh
 EOF
 )
-CLIENT=$(echo "$SCRIPT" | docker run -i --mount "type=volume,source=$VOLUME,target=/secrets,volume-subpath=auth" -v "$SCRIPT_DIR/auth-cli-scripts:/auth-cli-scripts" -e KC_URL="$KC_URL" --rm notes-api/auth-cli)
+CLIENT=$(echo "$SCRIPT" | docker run -i --mount "type=volume,source=$VOLUME,target=/secrets,volume-subpath=auth" -v "$SCRIPT_DIR/auth-cli-scripts:/auth-cli-scripts" -e KC_ADMIN_URL="$KC_ADMIN_URL" --rm notes-api/auth-cli)
 EXIT_CODE=$?
 if [[ $EXIT_CODE -ne 0 ]]; then
     echo "error: failed to initialize auth or retrieve initialization info (code: $EXIT_CODE)" >&2

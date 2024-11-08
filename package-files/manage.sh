@@ -58,7 +58,7 @@ reset-auth-secrets() {
 }
 
 setup-api-service() {
-    "$SCRIPT_DIR/setup-api-client.sh" "$AUTH_URL"
+    "$SCRIPT_DIR/setup-api-client.sh" "$AUTH_ADMIN_URL"
     validate_command "failed to setup API client"
     "$SCRIPT_DIR/ensure-volume.sh" notes-data
 }
@@ -116,7 +116,6 @@ while [[ $# -gt 0 ]]; do
                 exit -1
             fi
             shift
-            shift
             ;;
         --auth-url)
             if [[ ! -z "$2" ]]; then
@@ -126,7 +125,6 @@ while [[ $# -gt 0 ]]; do
                 exit -1
             fi
             shift
-            shift
             ;;
         --auth-admin-url)
             if [[ ! -z "$2" ]]; then
@@ -135,7 +133,6 @@ while [[ $# -gt 0 ]]; do
                 echo "error: expected value for auth admin URL" >&2
                 exit -1
             fi
-            shift
             shift
             ;;
         --api-port)
@@ -150,7 +147,6 @@ while [[ $# -gt 0 ]]; do
                 echo "error: expected value for api port" >&2
                 exit -1
             fi
-            shift
             shift
             ;;
         start)
@@ -191,5 +187,7 @@ while [[ $# -gt 0 ]]; do
         *)
             echo "error: unrecognized command: $1" >&2
             exit -1
+            ;;
     esac
+    shift
 done

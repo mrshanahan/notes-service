@@ -22,13 +22,13 @@ validate() {
 
 KC_ADMIN_USERNAME=$(load_secret "KC_ADMIN_USERNAME")
 KC_ADMIN_PASSWORD=$(load_secret "KC_ADMIN_PASSWORD")
-if [[ "$KC_URL" == "" ]]; then
-    KC_URL="https://auth-admin.notes.quemot.dev"
-    echo "warn: KC_URL not provided, using default '$KC_URL'" >&2
+if [[ "$KC_ADMIN_URL" == "" ]]; then
+    KC_ADMIN_URL="https://auth-admin.notes.quemot.dev"
+    echo "warn: KC_ADMIN_URL not provided, using default '$KC_ADMIN_URL'" >&2
 fi
 
 cd /opt/keycloak/bin
-./kcadm.sh config credentials --server "$KC_URL" --user "$KC_ADMIN_USERNAME" --password "$KC_ADMIN_PASSWORD" --realm master
+./kcadm.sh config credentials --server "$KC_ADMIN_URL" --user "$KC_ADMIN_USERNAME" --password "$KC_ADMIN_PASSWORD" --realm master
 validate "failed to configure KC credentials"
 
 bash
