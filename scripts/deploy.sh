@@ -2,6 +2,8 @@
 
 # ./deploy.sh ./package_X.tar.gz
 
+S3_BUCKET_PATH="quemot-dev-bucket"
+
 PACKAGE="$1"
 if [[ -z $PACKAGE ]]; then
     FOUND_PACKAGE=$(ls -1 ./package_*.tar.gz | sort | tail -1)
@@ -25,25 +27,14 @@ rm -rf ./package ./package*.tar.gz
 df -h /
 EOF
 
-ATTEMPTS=0
-SUCCESS=1
-while [[ $ATTEMPTS -lt 20 && $SUCCESS -ne 0 ]]; do
-    echo "[deploy] attempting transfer ($(($ATTEMPTS+1)))"
-    rsync -P -e "ssh -i ~/.ssh/quemot-dev.pem" "$PACKAGE" ubuntu@quemot.dev:/home/ubuntu
-    SUCCESS=$?
-    echo $SUCCESS
-    if [[ $SUCCESS -ne 0 ]]; then
-        ((ATTEMPTS+=1))
-    fi
-done
-
-if [[ $SUCCESS -ne 0 ]]; then
-    echo "error: file copy failed after $ATTEMPTS attempts" >&2
+PACKAGE_NAME="$(basename "$PACKAGE")"
+aws s3 cp "$PACKAGE" "s3://$S3_BUCKET_PATH"
+if [[ $? -ne 0 ]]; then
+    echo "error: upload of $PACKAGE to S3 bucket $S3_BUCKET_PATH failed" >&2
     exit 1
 fi
 
 echo "[deploy] attempting setup on remote machine"
-PACKAGE_NAME=$(basename "$PACKAGE")
 ssh -i ~/.ssh/quemot-dev.pem ubuntu@quemot.dev <<EOF
 validate() {
     EXIT_CODE=\$?
@@ -55,6 +46,9 @@ validate() {
 
 sudo docker image prune --force
 validate "failed to prune old images"
+
+aws s3 cp "s3://$S3_BUCKET_PATH/$PACKAGE_NAME" .
+validate "failed to download package s3://$S3_BUCKET_PATH/$PACKAGE_NAME"
 
 cd /home/ubuntu
 tar xvf "$PACKAGE_NAME" && (rm "$PACKAGE_NAME")
