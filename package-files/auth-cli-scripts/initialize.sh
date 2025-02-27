@@ -24,7 +24,7 @@ validate() {
 EXIT_CODE=$?
 if [[ $EXIT_CODE -eq 1 ]]; then
     echo "[notes-api] creating notes realm" >&2
-    ./kcadm.sh create realms -s realm=notes -s enabled=true >&2
+    ./kcadm.sh create realms -s realm=notes -s enabled=true -s ssoSessionIdleTimeout=1209600 -s ssoSessionMaxLifespan=2592000 >&2
     validate "error: failed to create realm (exit code: $?)"
     ./kcadm.sh 
 elif [[ $EXIT_CODE -eq 0 ]]; then
