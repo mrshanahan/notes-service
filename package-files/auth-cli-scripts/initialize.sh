@@ -34,7 +34,7 @@ else
     exit $EXIT_CODE
 fi
 
-CLIENTS=(notes-api notes-cli)
+CLIENTS=(notes-api notes-cli notes-web)
 for CLIENT_NAME in ${CLIENTS[@]}; do
     CLIENT="$(./kcadm.sh get clients -q "clientId=$CLIENT_NAME" -r notes --fields id --format csv --noquotes)"
     EXIT_CODE=$?
