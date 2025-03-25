@@ -54,7 +54,7 @@ cd /home/ubuntu
 tar xvf "$PACKAGE_NAME" && (rm "$PACKAGE_NAME")
 validate "failed to extract & remove package $PACKAGE_NAME"
 
-IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api')
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api' 'notes-api/web')
 for I in \${IMAGES[@]}; do
     FILENAME="\$(echo \$I | tr '/' '_').tar.gz"
     cat "./package/\$FILENAME" | sudo docker load

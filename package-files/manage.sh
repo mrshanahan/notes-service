@@ -14,7 +14,7 @@ usage: $(basename "${BASH_SOURCE[0]}") <global-options> <command> <sub-options>
         --auth-port                 Port at which the auth service should be/is hosted. Defaults to 8080.
         --auth-url                  URL at which the auth service's main application is hosted. Defaults to https://auth.notes.quemot.dev.
         --auth-admin-url            URL at which the auth service's admin features are accessible. Defaults to https://auth-admin.notes.quemot.dev.
-        --api-port                  Port at which the api service should be/is hosted. Defaults to 3333.
+        --public-api-url            Base URL at which the public-facing API service will be hosted. Defaults to https://api.notes.quemot.dev.
 
     Commands:
         start                       Runs the following steps to fully start the service:
@@ -83,7 +83,9 @@ invoke-docker-compose() {
 
     shift
 
-    KC_URL=$AUTH_URL KC_PORT=$AUTH_PORT NOTES_API_PORT=$API_PORT \
+    KC_URL=$AUTH_URL KC_PORT=$AUTH_PORT \
+    PUBLIC_API_URL=$PUBLIC_API_URL API_PORT=$API_PORT \
+    PUBLIC_WEB_URL=$PUBLIC_WEB_URL WEB_PORT=$WEB_PORT \
         docker compose -f "$SCRIPT_DIR/docker-compose-${SVC}.yml" $*
 
 }
@@ -91,13 +93,19 @@ invoke-docker-compose() {
 DEFAULT_AUTH_URL="https://auth.notes.quemot.dev"
 DEFAULT_AUTH_ADMIN_URL="https://auth-admin.notes.quemot.dev"
 DEFAULT_AUTH_PORT=8080
+DEFAULT_PUBLIC_API_URL="https://api.notes.quemot.dev"
 DEFAULT_API_PORT=3333
+DEFAULT_PUBLIC_WEB_URL="https://notes.quemot.dev"
+DEFAULT_WEB_PORT=4444
 SERVICES=('auth' 'api')
 
 AUTH_URL=$DEFAULT_AUTH_URL
 AUTH_ADMIN_URL=$DEFAULT_AUTH_ADMIN_URL
 AUTH_PORT=$DEFAULT_AUTH_PORT
+PUBLIC_API_URL=$DEFAULT_PUBLIC_API_URL
 API_PORT=$DEFAULT_API_PORT
+PUBLIC_WEB_URL=$DEFAULT_PUBLIC_WEB_URL
+WEB_PORT=$DEFAULT_WEB_PORT
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)
@@ -135,16 +143,48 @@ while [[ $# -gt 0 ]]; do
             fi
             shift
             ;;
+        --public-api-url)
+            if [[ ! -z "$2" ]]; then
+                PUBLIC_API_URL="$2"
+            else
+                echo "error: expected value for public API URL" >&2
+                exit -1
+            fi
+            shift
+            ;;
         --api-port)
             if [[ ! -z "$2" ]]; then
                 if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
                     API_PORT="$2"
                 else
-                    echo "error: invalid value for api port (expecting positive integer): $2" >&2
+                    echo "error: invalid value for API port (expecting positive integer): $2" >&2
                     exit -1
                 fi
             else
-                echo "error: expected value for api port" >&2
+                echo "error: expected value for API port" >&2
+                exit -1
+            fi
+            shift
+            ;;
+        --public-web-url)
+            if [[ ! -z "$2" ]]; then
+                PUBLIC_WEB_URL="$2"
+            else
+                echo "error: expected value for public web UI URL" >&2
+                exit -1
+            fi
+            shift
+            ;;
+        --web-port)
+            if [[ ! -z "$2" ]]; then
+                if [[ $2 == +([[:digit:]]) ]] && [[ $2 -gt 0 ]]; then
+                    WEB_PORT="$2"
+                else
+                    echo "error: invalid value for web UI port (expecting positive integer): $2" >&2
+                    exit -1
+                fi
+            else
+                echo "error: expected value for web UI port" >&2
                 exit -1
             fi
             shift
@@ -154,7 +194,10 @@ while [[ $# -gt 0 ]]; do
             invoke-docker-compose auth up -d
             validate_command "failed to spin up auth service"
             setup-api-service
-            AUTH_URL="$AUTH_URL" API_PORT="$API_PORT" invoke-docker-compose api up -d
+            AUTH_URL="$AUTH_URL" \
+            API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
+            WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
+                invoke-docker-compose api up -d
             validate_command "failed to spin up api service"
             ;;
         stop)

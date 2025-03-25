@@ -28,7 +28,7 @@ echo "[build.sh] building auth CLI image" >&2
 docker build auth-cli -t notes-api/auth-cli --no-cache
 validate "failed to build auth-cli image"
 
-IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api')
+IMAGES=('notes-api/auth' 'notes-api/auth-db' 'notes-api/auth-cli' 'notes-api/api' 'notes-api/web')
 for I in ${IMAGES[@]}; do
     FILENAME="$(echo $I | tr '/' '_').tar.gz"
     echo "[build.sh] saving $I image" >&2
