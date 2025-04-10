@@ -1,0 +1,41 @@
+{
+    "locations": [
+        {
+            "type": "local",
+            "name": "local"
+        },
+        {
+            "type": "ssh",
+            "name": "quemot.dev",
+            "server": "quemot.dev:22",
+            "username": "{{ SSH_USERNAME }}",
+            "key_file": "{{ SSH_KEY_FILE }}",
+            "run_elevated": true
+        }
+    ],
+    "transport": {
+        "type": "s3",
+        "bucket_url": "s3://quemot-dev-bucket//deploy-assets"
+    },
+    "assets": [
+        {
+            "type": "dir",
+            "src": "local",
+            "dst": "*",
+            "src_path": "package-files",
+            "dst_path": "/home/ubuntu/package"
+        },
+        {
+            "type": "docker_image",
+            "src": "local",
+            "dst": "*",
+            "repository": [
+                "notes-api/auth",
+                "notes-api/auth-db",
+                "notes-api/auth-cli",
+                "notes-api/api",
+                "notes-api/web"
+            ]
+        }
+    ]
+}
