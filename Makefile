@@ -1,14 +1,9 @@
 .DEFAULT_GOAL := build
 
-DEPLOY_ARGS =?
-
 build:
 	$(CURDIR)/scripts/build.sh
 
 deploy:
-	$(CURDIR)/scripts/deploy.sh $(DEPLOY_ARGS)
+	$(CURDIR)/scripts/deploy.sh && $(CURDIR)/scripts/restart-service.sh
 
-restart-service:
-	$(CURDIR)/scripts/restart-service.sh
-
-.PHONY: build deploy restart-service
+.PHONY: build deploy
