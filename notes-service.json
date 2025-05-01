@@ -19,14 +19,17 @@
     },
     "assets": [
         {
-            "type": "dir",
+            "type": "file",
+            "name": "notes-service-mgmt-files",
             "src": "local",
             "dst": "*",
             "src_path": "package-files",
-            "dst_path": "/home/ubuntu/package"
+            "dst_path": "/home/ubuntu/package",
+            "recursive": true
         },
         {
             "type": "docker_image",
+            "name": "notes-docker-images",
             "src": "local",
             "dst": "*",
             "repository": [
@@ -36,6 +39,15 @@
                 "notes-api/api",
                 "notes-api/web"
             ]
+        },
+        {
+            "type": "file",
+            "name": "notes-backup-crontab",
+            "src": "local",
+            "dst": "*",
+            "src_path": "notes_crontab",
+            "dst_path": "/home/ubuntu/crontab",
+            "post_command": "crontab /home/ubuntu/crontab"
         }
     ]
 }
