@@ -21,7 +21,8 @@ usage: $(basename "${BASH_SOURCE[0]}") <global-options> <command> <sub-options>
                                         setup-auth-service
                                         docker-compose auth up -d
                                         setup-api-service
-                                        docker-compose api up -d
+                                        docker-compose api up
+                -d                  Run the final docker-compose up in a detached state. Otherwise, the service will block until completion.
         stop                        Runs the following steps to fully stop the service:
                                         docker-compose api down
                                         docker-compose auth down
@@ -106,8 +107,10 @@ PUBLIC_API_URL=$DEFAULT_PUBLIC_API_URL
 API_PORT=$DEFAULT_API_PORT
 PUBLIC_WEB_URL=$DEFAULT_PUBLIC_WEB_URL
 WEB_PORT=$DEFAULT_WEB_PORT
+RUN_DETACHED=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        # TODO: Fix all these so that options are collected before command is run
         -h|--help)
             usage
             ;;
@@ -189,16 +192,27 @@ while [[ $# -gt 0 ]]; do
             fi
             shift
             ;;
+        -d)
+            RUN_DETACHED=true
+            ;;
         start)
             setup-auth-service
             invoke-docker-compose auth up -d
             validate_command "failed to spin up auth service"
             setup-api-service
-            AUTH_URL="$AUTH_URL" \
-            API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
-            WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
-                invoke-docker-compose api up -d
-            validate_command "failed to spin up api service"
+
+            if [[ "$RUN_DETACHED" = true ]]; then
+                AUTH_URL="$AUTH_URL" \
+                API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
+                WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
+                    invoke-docker-compose api up -d
+                validate_command "failed to spin up api service"
+            else
+                AUTH_URL="$AUTH_URL" \
+                API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
+                WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
+                    invoke-docker-compose api up
+            fi
             ;;
         stop)
             invoke-docker-compose api down

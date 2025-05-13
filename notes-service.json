@@ -42,12 +42,13 @@
         },
         {
             "type": "file",
-            "name": "notes-backup-crontab",
+            "name": "notes-service-files",
             "src": "local",
             "dst": "*",
-            "src_path": "notes_crontab",
-            "dst_path": "/home/ubuntu/crontab",
-            "post_command": "crontab /home/ubuntu/crontab"
+            "src_path": "install/",
+            "dst_path": "/home/ubuntu/notes-service-install/",
+            "post_command": "systemctl enable /home/ubuntu/notes-service-install/*.service --now && systemctl enable /home/ubuntu/notes-service-install/*.timer --now",
+            "run_post_command": "on_changed"
         }
     ]
 }

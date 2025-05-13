@@ -18,12 +18,13 @@ validate() {
     fi
 }
 
-sudo docker image prune --force
+sudo docker image prune --force >/dev/null
 validate "failed to prune old images"
 EOF
 
 ssh_username="ubuntu"
 ssh_key_file="/home/matt/.ssh/quemot-dev.pem"
 manifest_path="$(dirname $(realpath "$0"))/../notes-service.json"
+echo "[deploy] invoking deploy-assets"
 SSH_USERNAME=$ssh_username SSH_KEY_FILE=$ssh_key_file deploy-assets -manifest "$manifest_path" $*
 validate "failed to deploy assets"
