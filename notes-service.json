@@ -42,7 +42,7 @@
         },
         {
             "type": "file",
-            "name": "notes-service-files",
+            "name": "notes-service-install-files",
             "src": "local",
             "dst": "*",
             "src_path": "install/",
