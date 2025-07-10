@@ -1,12 +1,17 @@
 # Variables:
 # - AUTH_PORT (default: 8080): Port to expose for Keycloak
 
+version: '3.8'
+
 services:
   db:
     image: notes-api/auth-db
     build:
       context: auth-db
-    restart: always
+    deploy:
+      restart_policy:
+        condition: any
+        window: 10s
     shm_size: 128mb
     volumes:
       - kc-data:/var/lib/postgresql/data:rw
@@ -22,6 +27,13 @@ services:
     image: notes-api/auth
     build:
       context: auth
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+      restart_policy:
+        condition: any
+        window: 10s
     volumes:
       - type: volume
         source: notes-secrets

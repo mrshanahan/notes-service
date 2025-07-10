@@ -196,27 +196,61 @@ while [[ $# -gt 0 ]]; do
             RUN_DETACHED=true
             ;;
         start)
-            setup-auth-service
-            invoke-docker-compose auth up -d
-            validate_command "failed to spin up auth service"
-            setup-api-service
+            SERVICE_NAME="all"
+            if [[ ! -z "$2" ]]; then
+                SERVICE_NAME="$2"
+            fi
 
-            if [[ "$RUN_DETACHED" = true ]]; then
-                AUTH_URL="$AUTH_URL" \
-                API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
-                WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
-                    invoke-docker-compose api up -d
-                validate_command "failed to spin up api service"
-            else
-                AUTH_URL="$AUTH_URL" \
-                API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
-                WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
-                    invoke-docker-compose api up
+            if [[ "$SERVICE_NAME" != @(all|api|auth) ]]; then
+                echo "error: invalid service name: $SERVICE_NAME"
+                exit -1
+            fi
+
+            if [[ "$SERVICE_NAME" == @(all|auth) ]]; then
+                setup-auth-service
+
+                if [[ "$SERVICE_NAME" == "all" || "$RUN_DETACHED" = true ]]; then
+                    invoke-docker-compose auth up -d
+                else
+                    invoke-docker-compose auth up
+                fi
+                validate_command "failed to spin up auth service"
+            fi
+
+            if [[ "$SERVICE_NAME" == @(all|api) ]]; then
+                setup-api-service
+
+                if [[ "$RUN_DETACHED" = true ]]; then
+                    AUTH_URL="$AUTH_URL" \
+                    API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
+                    WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
+                        invoke-docker-compose api up -d
+                    validate_command "failed to spin up api service"
+                else
+                    AUTH_URL="$AUTH_URL" \
+                    API_PORT="$API_PORT" PUBLIC_API_URL="$PUBLIC_API_URL" \
+                    WEB_PORT="$WEB_PORT" PUBLIC_WEB_URL="$PUBLIC_WEB_URL" \
+                        invoke-docker-compose api up
+                fi
             fi
             ;;
         stop)
-            invoke-docker-compose api down
-            invoke-docker-compose auth down
+            SERVICE_NAME="all"
+            if [[ ! -z "$2" ]]; then
+                SERVICE_NAME="$2"
+            fi
+
+            if [[ "$SERVICE_NAME" != @(all|api|auth) ]]; then
+                echo "error: invalid service name: $SERVICE_NAME"
+                exit -1
+            fi
+
+            if [[ "$SERVICE_NAME" == @(all|api) ]]; then
+                invoke-docker-compose api down
+            fi
+            if [[ "$SERVICE_NAME" == @(all|auth) ]]; then
+                invoke-docker-compose auth down
+            fi
             ;;
         auth-cli)
             auth-cli $AUTH_ADMIN_URL

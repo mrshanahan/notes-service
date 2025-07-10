@@ -1,0 +1,14 @@
+[Unit]
+Description=Service that runs the Notes Auth service locally
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=root
+ExecStart=/home/ubuntu/package/manage.sh start auth
+
+[Install]
+WantedBy=multi-user.target

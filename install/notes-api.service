@@ -1,0 +1,15 @@
+[Unit]
+Description=Service that runs the Notes API service locally
+Requires=notes-auth.service
+After=notes-auth.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=root
+ExecStart=/home/ubuntu/package/manage.sh start api
+
+[Install]
+WantedBy=multi-user.target
