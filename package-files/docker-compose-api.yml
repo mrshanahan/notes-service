@@ -5,7 +5,7 @@
 # - WEB_PORT (required): Exposed port on which the web UI service will be hosted
 # - PUBLIC_WEB_URL (required): Base URL that the web UI service will be hosted at (e.g. https://notes.quemot.dev)
 
-version: '3.8'
+version: '2.4'
 
 services:
   api:
