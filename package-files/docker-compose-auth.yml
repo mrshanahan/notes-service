@@ -24,7 +24,8 @@ services:
     image: notes-api/auth
     build:
       context: auth
-    mem_limit: 1g
+    mem_limit: 0.5g
+    memswap_limit: 0.5g
     restart: always
     volumes:
       - type: volume
