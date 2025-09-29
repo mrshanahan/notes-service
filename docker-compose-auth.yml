@@ -8,6 +8,8 @@ services:
     image: notes-api/auth-db
     build:
       context: auth-db
+      labels:
+        dev.quemot.notes.image.sha: $GIT_SHA
     restart: always
     shm_size: 128mb
     volumes:
@@ -24,6 +26,8 @@ services:
     image: notes-api/auth
     build:
       context: auth
+      labels:
+        dev.quemot.notes.image.sha: $GIT_SHA
     mem_limit: 0.5g
     memswap_limit: 0.5g
     restart: always

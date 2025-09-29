@@ -10,6 +10,7 @@
             "server": "quemot.dev:22",
             "username": "{{ SSH_USERNAME }}",
             "key_file": "{{ SSH_KEY_FILE }}",
+            "key_file_passphrase": "{{ SSH_KEY_FILE_PASSPHRASE }}",
             "run_elevated": true
         }
     ],

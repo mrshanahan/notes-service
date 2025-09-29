@@ -1,4 +1,4 @@
-FROM postgres
+FROM postgres:16
 
 ADD --chmod=755 ./start.sh /var/lib/postgresql
 
