@@ -39,7 +39,8 @@
                 "notes-api/auth-cli",
                 "notes-api/api",
                 "notes-api/web"
-            ]
+            ],
+            "compare_label": "dev.quemot.notes.image.sha"
         },
         {
             "type": "file",
