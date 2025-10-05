@@ -30,5 +30,5 @@ validate "failed to read ssh key file password"
 echo
 manifest_path="$(dirname $(realpath "$0"))/../notes-service.json"
 echo "[deploy] invoking deploy-assets"
-SSH_USERNAME=$ssh_username SSH_KEY_FILE=$ssh_key_file SSH_KEY_FILE_PASSPHRASE=$ssh_key_file_passphrase deploy-assets -manifest "$manifest_path" $*
+AWS_DEFAULT_PROFILE=deploy-assets SSH_USERNAME=$ssh_username SSH_KEY_FILE=$ssh_key_file SSH_KEY_FILE_PASSPHRASE=$ssh_key_file_passphrase deploy-assets -manifest "$manifest_path" $*
 validate "failed to deploy assets"

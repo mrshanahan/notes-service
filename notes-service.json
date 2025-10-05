@@ -40,7 +40,9 @@
                 "notes-api/api",
                 "notes-api/web"
             ],
-            "compare_label": "dev.quemot.notes.image.sha"
+            "compare_label": "dev.quemot.notes.image.sha",
+            "post_command": "systemctl restart notes.service",
+            "run_post_command": "on_changed"
         },
         {
             "type": "file",
